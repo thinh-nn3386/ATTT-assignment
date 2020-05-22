@@ -2,21 +2,22 @@ import collections
 import re
 import random
 import matplotlib.pyplot as plt
-from pycipher import SimpleSubstitution
+# from pycipher import SimpleSubstitution
+import sys
 
-simpleSub = SimpleSubstitution()
 
 ###############################################################
 ## program paramaters
 
 # Path to the text file contaning the ciphertext
-CIPHERTEXT = "ciphertext.txt"
+CIPHERTEXT = sys.argv[2]
 
 # Path to the text file contaning the plaintext
 PLAINTEXT = "plaintext.txt"
 
 # Path to the text file contaning the bigram, trigram, quadgram of english
-PATH_NGRAM = {  2: "english_bigrams.txt",
+PATH_NGRAM = {  1: "english_monograms.txt",
+                2: "english_bigrams.txt",
                 3: "english_trigrams.txt",
                 4: "english_quadgrams.txt"}
 
@@ -59,7 +60,7 @@ def ngramWord(word,n_gram ):
 def ngrams(text, n_gram):
     # extract ngrams from text
     counter = collections.Counter()
-    words = re.sub('[^A-Za-z]', ' ', text).split()
+    words = re.sub('[^A-Za-z]', ' ', text).split() #replace all non alphabet by blank, then split()
     for word in words:
         for n_wise in ngramWord(word,n_gram):
             counter[n_wise] += 1
@@ -83,7 +84,7 @@ def init_mapping():
             continue
         repl = random.choice(list(repls))
         repls.remove(repl)
-        repls.discard(c) #remove from the set if it's present
+        repls.discard(c) #remove from the set if it's present, maybe c == repl
         mapping[c] = repl
         mapping[repl] = c
     return mapping
@@ -164,10 +165,11 @@ def generate(population):
 
 ###############################################################################
 # Decryption routine
-BestScores = []
-Iterations = []
 
-def decrypt(n_gram):
+
+def decrypt(n_gram, plot_color):
+    BestScores = []
+    Iterations = []
     ref_ngram = {}
     for line in open(PATH_NGRAM[n_gram]):
         key, count = line.split(" ")
@@ -203,7 +205,7 @@ def decrypt(n_gram):
         print(iterations ,":", last_score_increase, ':', best_score)
         BestScores.append(best_score)
         Iterations.append(iterations)
-        plt.plot(Iterations, BestScores, 'r')
+        plt.plot(Iterations, BestScores, plot_color)
         plt.xlabel('generation')
         plt.ylabel('bestScore')
         plt.show(block=False)
@@ -215,29 +217,46 @@ def decrypt(n_gram):
     print('Best solution found after {} iterations'.format(iterations))
     print('with population :{}'.format(population[0]))
 
-    return decode(ciphertext, population[0])
+    return decode(ciphertext, population[0]), population[0],BestScores[-1]
 
-def metrics(n_gram):
-    AnswerText = decrypt(n_gram)
+def metrics(n_gram, number_iter_GA = 3):
+    colorMapping = {1:"b",
+                    2:"g",
+                    3:"r",
+                    4:"c",
+                    5:"m",
+                    6:"y",
+                    7:"k",
+                    8:"w"}
+
     f = open("predPlaintext.txt","w", encoding="utf8")
-    f.write(AnswerText.lower())
-    f.close()
-    totalLen = len(AnswerText)
-    accuracyCount = 0
-    with open(PLAINTEXT,encoding="utf8") as original:
-        OriginaText = original.read().upper()
-    for i in range(totalLen):
-        if OriginaText[i] == AnswerText[i]:
-            accuracyCount += 1
-    print('accuracy : {}%'.format(100 * accuracyCount / totalLen))
+    for i in range(number_iter_GA):
 
-plt.plot(BestScores, Iterations)
-metrics(2) # ngram = 2,3,4
+        AnswerText, key, bestScores= decrypt(n_gram,colorMapping[i+1])
+        f.write("------------------------------------------------------------------------------------------------------\n")
+        f.write("iteration {}\n".format(i+1))
+        f.write(str(key)+"\n")
+        f.write("Best Score: {}\n".format(bestScores))
+        f.write("------------------------------------------------------------------------------------------------------\n")
+        f.write(AnswerText.lower())
+        f.write("\n\n\n")
+    f.close()
+    # totalLen = len(AnswerText)
+    # accuracyCount = 0
+    # with open(PLAINTEXT,encoding="utf8") as original:
+    #     OriginaText = original.read().upper()
+    # for i in range(totalLen):
+    #     if OriginaText[i] == AnswerText[i]:
+    #         accuracyCount += 1
+    # print('accuracy : {}%'.format(100 * accuracyCount / totalLen))
+
+# plt.plot(BestScores, Iterations)
+if len(sys.argv) == 3:
+    metrics(int(sys.argv[1])) # ngram = 2,3,4
+if len(sys.argv) >3:
+    metrics(int(sys.argv[1]),int(sys.argv[3]))
 plt.show()
 plt.pause(2)
 plt.close()
-"""
-with population :{'A': 'B', 'J': 'J', 'B': 'A', 'I': 'P', 'C': 'C', 'K': 'O', 'D': 'D', 'L': 'E', 'E': 'L', 'Y': 'Y', 'F': 'F', 'P': 'I', 'G': 'G', 'N': 'N', 'H': 'R', 'M': 'M', 'V': 'V', 'O': 'K', 'Z': 'U', 'Q': 'Q', 'R': 'H', 'W': 'W', 'S': 'S', 'U': 'Z', 'T': 'T', 'X': 'X'}
-accuracy : 100.0%
-"""
+
 
