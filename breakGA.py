@@ -116,12 +116,12 @@ def score(text, ref_ngrams, n_gram ):
     compute the score "fitness" of text
     score = number of ngram occurrences in text multip number of ngram occur in english
     """
-    N = sum(ref_ngrams.values())
+    #N = sum(ref_ngrams.values())
     text_ngram = ngrams(text, n_gram)
     score = 0
     for n_wise, occurrences in text_ngram.items():
-        score += occurrences * ref_ngrams[n_wise]
-    return score/N
+        score += occurrences * ref_ngrams.get(n_wise,-10000)
+    return score
 
 
 def select(population, ciphertext, ref_ngrams , n_gram):
@@ -129,7 +129,7 @@ def select(population, ciphertext, ref_ngrams , n_gram):
 
     # Compute the score of each solution
     for p in population:
-        scores.append((score(decode(ciphertext, p), ref_ngrams, n_gram), p))
+        scores.append(tuple((score(decode(ciphertext, p), ref_ngrams, n_gram), p)))
 
     # Sort the solutions by their score
     sorted_population = sorted(scores, reverse=True)
