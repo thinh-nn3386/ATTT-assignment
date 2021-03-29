@@ -1,5 +1,5 @@
 # ATTT-assignment
-
+Giải mã một bảng thế sử dụng giải thuật gi truyền, kết hợp xác suất xuất hiện các từ trong tiếng anh
 
 
 ##Để chạy chương trình:   
